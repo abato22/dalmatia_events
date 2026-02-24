@@ -15,6 +15,8 @@ router.get("/my", authMiddleware, async (req, res) => {
       `
       SELECT 
         e.*,
+        e.date_start::text AS date_start,
+        e.date_end::text AS date_end,
         p.name AS place_name,
         c.name AS category_name,
         ST_AsGeoJSON(e.location_point) AS location_point
@@ -70,6 +72,8 @@ router.get("/nearby", async (req, res) => {
       `
       SELECT 
         e.*,
+        e.date_start::text AS date_start,
+        e.date_end::text AS date_end,
         p.name AS place_name,
         c.name AS category_name,
         ST_AsGeoJSON(e.location_point) AS location_point,
@@ -117,8 +121,8 @@ router.get("/", async (req, res) => {
         e.id,
         e.title,
         e.description,
-        e.date_start,
-        e.date_end,
+        e.date_start::text AS date_start,
+        e.date_end::text AS date_end,
         e.average_rating,
         e.reviews_count,
         p.name AS place_name,
@@ -247,6 +251,21 @@ router.post("/", authMiddleware, async (req, res) => {
       });
     }
 
+    const today = new Date();
+      today.setHours(0,0,0,0);
+
+      if (date_start && new Date(date_start) < today) {
+        return res.status(400).json({
+          message: "Start date cannot be in the past."
+        });
+      }
+
+      if (date_end && new Date(date_end) < today) {
+        return res.status(400).json({
+          message: "End date cannot be in the past."
+        });
+      }
+
     const newEvent = await pool.query(
       `INSERT INTO events 
         (
@@ -267,7 +286,7 @@ router.post("/", authMiddleware, async (req, res) => {
         ) 
        VALUES (
           $1,$2,$3,$4,
-          $5,$6,$7,$8,$9,$10,$11,$12,
+          $5,$6,$7,$8,$9,($10)::date,($11)::date,$12,
           $13,
           ST_SetSRID(ST_MakePoint($14,$15),4326)
        )
@@ -338,27 +357,61 @@ router.put("/:id", authMiddleware, async (req, res) => {
       price,
       date_start,
       date_end,
-      image_url
+      image_url,
+      latitude,
+      longitude
     } = req.body;
 
-    // ⭐ IMPORTANT: fallback to existing values to avoid undefined → 500
+    const parsedLat = Number(latitude);
+    const parsedLng = Number(longitude);
+
+    const safeLat =
+      latitude === undefined || latitude === "" || Number.isNaN(parsedLat)
+        ? null
+        : parsedLat;
+
+    const safeLng =
+      longitude === undefined || longitude === "" || Number.isNaN(parsedLng)
+        ? null
+        : parsedLng;
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    if (date_start && new Date(date_start) < today) {
+      return res.status(400).json({
+        message: "Start date cannot be in the past."
+      });
+    }
+
+    if (date_end && new Date(date_end) < today) {
+      return res.status(400).json({
+        message: "End date cannot be in the past."
+      });
+    }
+
     await pool.query(
       `
-      UPDATE events
-      SET
-        organizer_name=$1,
-        organizer_surname=$2,
-        organizer_email=$3,
-        organizer_phone=$4,
-        title=$5,
-        description=$6,
-        place_id=$7,
-        category_id=$8,
-        price=$9,
-        date_start=$10,
-        date_end=$11,
-        image_url=$12
-      WHERE id=$13
+        UPDATE events
+        SET
+          organizer_name=$1,
+          organizer_surname=$2,
+          organizer_email=$3,
+          organizer_phone=$4,
+          title=$5,
+          description=$6,
+          place_id=$7,
+          category_id=$8,
+          price=$9,
+          date_start=($10)::date,
+          date_end=($11)::date,
+          image_url=$12,
+          location_point = CASE
+            WHEN $13::double precision IS NOT NULL AND $14::double precision IS NOT NULL
+            THEN ST_SetSRID(ST_MakePoint($14::double precision,$13::double precision),4326)
+            ELSE location_point
+          END
+        WHERE id=$15
       `,
       [
         organizer_name ?? existing.organizer_name,
@@ -373,6 +426,8 @@ router.put("/:id", authMiddleware, async (req, res) => {
         date_start ?? existing.date_start,
         date_end ?? existing.date_end,
         image_url ?? existing.image_url,
+        safeLat,
+        safeLng,
         eventId
       ]
     );

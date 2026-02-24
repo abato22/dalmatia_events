@@ -94,6 +94,7 @@ function MyEvents() {
 
       {showModal && (
         <CreateEventModal
+          key={editingEvent?.id || "new"}   // ⭐ IMPORTANT
           editingEvent={editingEvent}
           onClose={() => {
             setShowModal(false);
@@ -147,6 +148,8 @@ function CreateEventModal({ onClose, onCreated, editingEvent, onSaved }) {
   const [categories, setCategories] = useState([]);
   const [markerPosition, setMarkerPosition] = useState(null);
 
+  const today = new Date().toISOString().split("T")[0];
+
   const [form, setForm] = useState({
     organizer_name: editingEvent?.organizer_name || "",
     organizer_surname: editingEvent?.organizer_surname || "",
@@ -163,6 +166,36 @@ function CreateEventModal({ onClose, onCreated, editingEvent, onSaved }) {
     longitude: null,
     image_url: editingEvent?.image_url || ""
   });
+
+  useEffect(() => {
+    if (!editingEvent) return;
+
+    setForm({
+      organizer_name: editingEvent.organizer_name || "",
+      organizer_surname: editingEvent.organizer_surname || "",
+      organizer_email: editingEvent.organizer_email || "",
+      organizer_phone: editingEvent.organizer_phone || "",
+      title: editingEvent.title || "",
+      description: editingEvent.description || "",
+      place_id: editingEvent.place_id || "",
+      category_id: editingEvent.category_id || "",
+      price: editingEvent.price ?? "",
+      date_start: editingEvent.date_start?.slice(0, 10) || "",
+      date_end: editingEvent.date_end?.slice(0, 10) || "",
+      latitude: null,
+      longitude: null,
+      image_url: editingEvent.image_url || ""
+    });
+
+    // also restore marker position
+    if (editingEvent.location_point?.coordinates) {
+      setMarkerPosition({
+        lat: editingEvent.location_point.coordinates[1],
+        lng: editingEvent.location_point.coordinates[0]
+      });
+    }
+
+  }, [editingEvent]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -254,6 +287,12 @@ function CreateEventModal({ onClose, onCreated, editingEvent, onSaved }) {
             : Number(form.price)
       };
 
+      // ⭐ ONLY send location if user picked new marker
+      if (form.latitude == null || form.longitude == null) {
+        delete payload.latitude;
+        delete payload.longitude;
+      }
+
       const res = editingEvent
         ? await axios.put(
             `http://localhost:3000/events/${editingEvent.id}`,
@@ -279,15 +318,15 @@ function CreateEventModal({ onClose, onCreated, editingEvent, onSaved }) {
       <div style={modalStyle}>
         <h3>Create Event</h3>
 
-        <input name="organizer_name" placeholder="Name" onChange={handleChange} />
-        <input name="organizer_surname" placeholder="Surname" onChange={handleChange} />
-        <input name="organizer_email" placeholder="Email" onChange={handleChange} />
-        <input name="organizer_phone" placeholder="Phone" onChange={handleChange} />
+        <input name="organizer_name" placeholder="Name" value={form.organizer_name} onChange={handleChange} />
+        <input name="organizer_surname" placeholder="Surname" value={form.organizer_surname} onChange={handleChange} />
+        <input name="organizer_email" placeholder="E-mail" value={form.organizer_email} onChange={handleChange} />
+        <input name="organizer_phone" placeholder="Phone" value={form.organizer_phone} onChange={handleChange} />
 
-        <input name="title" placeholder="Event Title" onChange={handleChange} />
-        <textarea name="description" placeholder="Description" onChange={handleChange} />
+        <input name="title" placeholder="Event Title" value={form.title} onChange={handleChange} />
+        <textarea name="description" placeholder="Description" value={form.description} onChange={handleChange} />
 
-        <select name="place_id" onChange={handleChange}>
+        <select name="place_id" value={form.place_id} onChange={handleChange}>
           <option value="">Select Municipality</option>
           {places.map(place => (
             <option key={place.id} value={place.id}>
@@ -296,7 +335,7 @@ function CreateEventModal({ onClose, onCreated, editingEvent, onSaved }) {
           ))}
         </select>
 
-        <select name="category_id" onChange={handleChange}>
+        <select name="category_id" value={form.category_id} onChange={handleChange}>
           <option value="">Select Category</option>
           {categories.map(cat => (
             <option key={cat.id} value={cat.id}>
@@ -305,12 +344,12 @@ function CreateEventModal({ onClose, onCreated, editingEvent, onSaved }) {
           ))}
         </select>
 
-        <input name="price" type="number" placeholder="Price (€)" onChange={handleChange} />
+        <input name="price" type="number" placeholder="Price (€)" value={form.price ?? ""} onChange={handleChange} />
 
-        <input type="date" name="date_start" onChange={handleChange} />
-        <input type="date" name="date_end" onChange={handleChange} />
+        <input type="date" name="date_start" value={form.date_start} min={today} onChange={handleChange} />
+        <input type="date" name="date_end" value={form.date_end} min={form.date_start || today} onChange={handleChange} />
 
-        <input name="image_url" placeholder="Image URL (optional)" onChange={handleChange} />
+        <input name="image_url" placeholder="Image URL (optional)" value={form.image_url} onChange={handleChange} />
 
         <div style={{ height: "300px", marginTop: "10px" }}>
           <MapContainer
