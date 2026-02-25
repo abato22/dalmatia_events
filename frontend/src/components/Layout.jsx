@@ -1,77 +1,122 @@
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 function Layout() {
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+  const location = useLocation();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/");
+  const [token, setToken] = useState(localStorage.getItem("token"));
+
+  useEffect(() => {
+    setToken(localStorage.getItem("token"));
+  }, [location]);
+
+  const handleAuthClick = () => {
+    if (token) {
+      localStorage.removeItem("token");
+      setToken(null);
+      navigate("/");
+    } else {
+      navigate("/login");
+    }
   };
 
+  const isActive = (path) => location.pathname === path;
+
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      
-      {/* Sidebar */}
-      <div
-        style={{
-          width: "250px",
-          background: "#1e293b",
-          color: "white",
-          padding: "20px",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between"
-        }}
-      >
-        <div>
-          <h2>Dalmatia</h2>
-
-          <nav
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px"
-            }}
-          >
-            <Link to="/" style={{ color: "white" }}>
-              Home
-            </Link>
-
-            <Link to="/explore" style={{ color: "white" }}>
-              Explore
-            </Link>
-
-            <Link to="/my-events" style={{ color: "white" }}>
-              My Events
-            </Link>
-
-            <Link to="/wishlist" style={{ color: "white" }}>
-              Wishlist
-            </Link>
-          </nav>
+    <>
+      <nav style={nav}>
+        <div style={left}>
+          <Link to="/" style={logo}>
+            Dalmatia Events
+          </Link>
         </div>
 
-        {/* Bottom Button */}
-        <div>
-          {token ? (
-            <button onClick={handleLogout}>
-              Logout
-            </button>
-          ) : (
-            <button onClick={() => navigate("/login")}>
-              Login
-            </button>
-          )}
+        <div style={center}>
+          <Link to="/" style={navLink(isActive("/"))}>Home</Link>
+          <Link to="/explore" style={navLink(isActive("/explore"))}>Explore</Link>
+          <Link to="/my-events" style={navLink(isActive("/my-events"))}>My Events</Link>
+          <Link to="/wishlist" style={navLink(isActive("/wishlist"))}>Wishlist</Link>
         </div>
-      </div>
 
-      {/* Page Content */}
-      <div style={{ flex: 1, padding: "20px" }}>
+        <div style={right}>
+          <button onClick={handleAuthClick} style={authBtn}>
+            {token ? "Logout" : "Log In / Sign Up"}
+          </button>
+        </div>
+      </nav>
+
+      <div style={content}>
         <Outlet />
       </div>
-    </div>
+    </>
   );
 }
 
 export default Layout;
+
+
+/* ================= STYLES ================= */
+
+const nav = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  width: "100%",
+  height: 64,
+  background: "#1e293b",
+  display: "grid",
+  gridTemplateColumns: "auto 1fr auto", // ⭐ FIX overflow
+  alignItems: "center",
+  padding: "0 30px",
+  boxSizing: "border-box",
+  zIndex: 10000 // ⭐ ensures navbar above leaflet controls
+};
+
+const left = {
+  display: "flex",
+  alignItems: "center"
+};
+
+const center = {
+  display: "flex",
+  justifyContent: "center",
+  gap: 40
+};
+
+const right = {
+  display: "flex",
+  justifyContent: "flex-end",
+  minWidth: 160 // ⭐ prevents button cut
+};
+
+const logo = {
+  color: "white",
+  textDecoration: "none",
+  fontWeight: "bold",
+  fontSize: 18
+};
+
+const navLink = (active) => ({
+  color: active ? "#38bdf8" : "white",
+  textDecoration: "none",
+  fontSize: 15,
+  borderBottom: active ? "2px solid #38bdf8" : "2px solid transparent",
+  paddingBottom: 4,
+  transition: "0.2s"
+});
+
+const authBtn = {
+  padding: "8px 16px", // ⭐ FIX width
+  borderRadius: 8,
+  border: "none",
+  background: "#2563eb",
+  color: "white",
+  cursor: "pointer",
+  whiteSpace: "nowrap" // ⭐ prevents text cut
+};
+
+const content = {
+  marginTop: 80,
+  padding: "20px 40px"
+};

@@ -26,11 +26,23 @@ router.post("/register", async (req, res) => {
 
     // insert user
     const newUser = await pool.query(
-      "INSERT INTO users (username, email, password_hash) VALUES ($1,$2,$3) RETURNING id, username, email",
+      `INSERT INTO users (username, email, password_hash)
+       VALUES ($1,$2,$3)
+       RETURNING id, username, email`,
       [username, email, password_hash]
     );
 
-    res.json(newUser.rows[0]);
+    const user = newUser.rows[0];
+
+    // ⭐ CREATE TOKEN (IMPORTANT)
+    const token = jwt.sign(
+      { id: user.id, username: user.username },
+      process.env.JWT_SECRET || "secretkey",
+      { expiresIn: "7d" }
+    );
+
+    // ⭐ RETURN TOKEN
+    res.json({ token, user });
 
   } catch (err) {
     console.error(err.message);
