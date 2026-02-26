@@ -12,6 +12,11 @@ import {
   useMap
 } from "react-leaflet";
 
+const DALMATIA_BOUNDS = [
+  [42.1, 14.8], // southwest (lat, lng)
+  [44.8, 18.5]  // northeast
+];
+
 
 // Remove focus outline only for Leaflet interactive paths
 const removeLeafletFocusStyle = () => {
@@ -32,7 +37,10 @@ function FitBounds({ data }) {
   useEffect(() => {
     if (!data) return;
     const layer = L.geoJSON(data);
-    map.fitBounds(layer.getBounds());
+    map.fitBounds(layer.getBounds(), {
+      padding: [180, 180],
+      maxZoom: 20
+    });
   }, [data, map]);
 
   return null;
@@ -173,13 +181,13 @@ function Explore() {
         <MapContainer
           style={{ height: "100%", width: "100%" }}
           zoom={8}
-          minZoom={7}
+          minZoom={8}
           maxZoom={14}
           center={[43.5, 16.5]}
+          maxBounds={DALMATIA_BOUNDS}       
+          maxBoundsViscosity={1.0}  
         >
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-          {municipalities && <FitBounds data={municipalities} />}
 
           {municipalities && (
             <ZoomToSelected

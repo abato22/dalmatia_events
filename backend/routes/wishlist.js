@@ -59,13 +59,18 @@ router.get("/", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const result = await pool.query(
-      `SELECT events.* 
-       FROM wishlist
-       JOIN events ON wishlist.event_id = events.id
-       WHERE wishlist.user_id = $1`,
-      [userId]
-    );
+  const result = await pool.query(
+    `
+    SELECT 
+      e.*,
+      p.name AS place_name
+    FROM wishlist w
+    JOIN events e ON w.event_id = e.id
+    JOIN places p ON e.place_id = p.id
+    WHERE w.user_id = $1
+    `,
+    [userId]
+  );
 
     res.json(result.rows);
 
