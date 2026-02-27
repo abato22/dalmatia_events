@@ -25,98 +25,121 @@ function Layout() {
 
   return (
     <>
-      <nav style={nav}>
-        <div style={left}>
+      <nav style={navWrapper}>
+        <div style={navInner}>
+
           <Link to="/" style={logo}>
             Dalmatia Events
           </Link>
-        </div>
 
-        <div style={center}>
-          <Link to="/" style={navLink(isActive("/"))}>Home</Link>
-          <Link to="/explore" style={navLink(isActive("/explore"))}>Explore</Link>
-          <Link to="/my-events" style={navLink(isActive("/my-events"))}>My Events</Link>
-          <Link to="/wishlist" style={navLink(isActive("/wishlist"))}>Wishlist</Link>
-        </div>
+          <div style={center}>
+            <Link to="/" style={navLink(isActive("/"))}>Home</Link>
+            <Link to="/explore" style={navLink(isActive("/explore"))}>Explore</Link>
+            <Link to="/my-events" style={navLink(isActive("/my-events"))}>My Events</Link>
+            <Link to="/wishlist" style={navLink(isActive("/wishlist"))}>Wishlist</Link>
+          </div>
 
-        <div style={right}>
-          <button onClick={handleAuthClick} style={authBtn}>
-            {token ? "Logout" : "Log In / Sign Up"}
-          </button>
+          <div style={right}>
+            <button onClick={handleAuthClick} style={authBtn(token)}>
+              {token ? "Logout" : "Log In / Sign Up"}
+            </button>
+          </div>
+
         </div>
       </nav>
 
-      <div style={content}>
+      <main style={content}>
         <Outlet />
-      </div>
+      </main>
     </>
   );
 }
 
 export default Layout;
 
+/* ================= DESIGN TOKENS ================= */
 
-/* ================= STYLES ================= */
+const container = {
+  maxWidth: 1200,
+  margin: "0 auto",
+  padding: "0 20px"
+};
 
-const nav = {
+/* ================= NAVBAR ================= */
+
+const navWrapper = {
   position: "fixed",
   top: 0,
   left: 0,
   width: "100%",
-  height: 64,
-  background: "#1e293b",
-  display: "grid",
-  gridTemplateColumns: "auto 1fr auto", // ⭐ FIX overflow
-  alignItems: "center",
-  padding: "0 30px",
-  boxSizing: "border-box",
-  zIndex: 10000 // ⭐ ensures navbar above leaflet controls
+  height: 72,
+  backdropFilter: "blur(10px)",
+  background: "rgba(255,255,255,0.75)",
+  borderBottom: "1px solid #eef2f7",
+  zIndex: 10000
 };
 
-const left = {
-  display: "flex",
+const navInner = {
+  ...container,
+  height: "100%",
+  display: "grid",
+  gridTemplateColumns: "auto 1fr auto",
   alignItems: "center"
+};
+
+const logo = {
+  fontWeight: 800,
+  fontSize: 18,
+  textDecoration: "none",
+  color: "#0f172a",
+  letterSpacing: -0.2
 };
 
 const center = {
   display: "flex",
   justifyContent: "center",
-  gap: 40
-};
-
-const right = {
-  display: "flex",
-  justifyContent: "flex-end",
-  minWidth: 160 // ⭐ prevents button cut
-};
-
-const logo = {
-  color: "white",
-  textDecoration: "none",
-  fontWeight: "bold",
-  fontSize: 18
+  gap: 10
 };
 
 const navLink = (active) => ({
-  color: active ? "#38bdf8" : "white",
+  padding: "8px 14px",
+  borderRadius: 10,
   textDecoration: "none",
-  fontSize: 15,
-  borderBottom: active ? "2px solid #38bdf8" : "2px solid transparent",
-  paddingBottom: 4,
-  transition: "0.2s"
+  fontSize: 14,
+  fontWeight: 600,
+  color: active ? "#1e293b" : "#475569",
+  background: active ? "#f1f5f9" : "transparent",
+  transition: "all .18s ease"
 });
 
-const authBtn = {
-  padding: "8px 16px", // ⭐ FIX width
-  borderRadius: 8,
-  border: "none",
-  background: "#2563eb",
-  color: "white",
-  cursor: "pointer",
-  whiteSpace: "nowrap" // ⭐ prevents text cut
+const right = {
+  display: "flex",
+  justifyContent: "flex-end"
 };
 
+/* ================= AUTH BUTTON ================= */
+
+const authBtn = (token) => ({
+  padding: "10px 18px",
+  borderRadius: 12,
+  border: token ? "1px solid #e2e8f0" : "none",
+  background: token
+    ? "white"
+    : "linear-gradient(135deg,#2563eb,#4f46e5)",
+  color: token ? "#0f172a" : "white",
+  fontWeight: 700,
+  fontSize: 14,
+  cursor: "pointer",
+  boxShadow: token
+    ? "0 6px 18px rgba(0,0,0,0.06)"
+    : "0 12px 26px rgba(37,99,235,0.35)",
+  transition: "all .18s ease"
+});
+
+/* ================= CONTENT ================= */
+
 const content = {
-  marginTop: 80,
-  padding: "20px 40px"
+  paddingTop: 96,
+  minHeight: "100vh",
+  background: "#ffffff"
 };

@@ -64,77 +64,101 @@ function MyEvents() {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <div>
-      <h2>My Events</h2>
+    <div style={page}>
+      <div style={container}>
 
-      <button
-        onClick={() => {
-          setEditingEvent(null);
-          setShowModal(true);
-        }}
-        style={buttonStyle}
-      >
-        Create New Event
-      </button>
+        {/* HEADER */}
+        <div style={pageHeader}>
+          <div>
+            <h1 style={pageTitle}>My Events</h1>
+            <p style={pageSubtitle}>
+              Manage events you created — edit upcoming ones or review past events.
+            </p>
+          </div>
 
-      <div style={{ display: "flex", gap: "20px" }}>
-        <Column title="Past" events={events.past} onDelete={deleteEvent} />
-        <Column title="Current" events={events.current} onDelete={deleteEvent} />
-        <Column
-          title="Future"
-          events={events.future}
-          onDelete={deleteEvent}
-          onEdit={(event) => {
-            setEditingEvent(event);
-            setShowModal(true);
-          }}
-          editable
-        />
+          <button
+            onClick={() => {
+              setEditingEvent(null);
+              setShowModal(true);
+            }}
+            style={primaryBtn}
+          >
+            + Create Event
+          </button>
+        </div>
+
+        {/* BOARD */}
+        <div style={board}>
+          <Column title="Past" events={events.past} onDelete={deleteEvent} />
+
+          <Column title="Current" events={events.current} onDelete={deleteEvent} />
+
+          <Column
+            title="Future"
+            events={events.future}
+            onDelete={deleteEvent}
+            onEdit={(event) => {
+              setEditingEvent(event);
+              setShowModal(true);
+            }}
+            editable
+          />
+        </div>
+
+        {/* MODAL */}
+        {showModal && (
+          <CreateEventModal
+            key={editingEvent?.id || "new"}
+            editingEvent={editingEvent}
+            onClose={() => {
+              setShowModal(false);
+              setEditingEvent(null);
+            }}
+            onSaved={async () => {
+              await fetchMyEvents();
+              setShowModal(false);
+              setEditingEvent(null);
+            }}
+          />
+        )}
+
       </div>
-
-      {showModal && (
-        <CreateEventModal
-          key={editingEvent?.id || "new"}   // ⭐ IMPORTANT
-          editingEvent={editingEvent}
-          onClose={() => {
-            setShowModal(false);
-            setEditingEvent(null);
-          }}
-          onSaved={async () => {
-            await fetchMyEvents();
-            setShowModal(false);
-            setEditingEvent(null);
-          }}
-        />
-      )}
     </div>
   );
 }
 
 function Column({ title, events, onDelete, editable, onEdit }) {
   return (
-    <div style={{ flex: 1 }}>
-      <h3>{title}</h3>
-      {events.length === 0 && <p>No events</p>}
+    <div style={column}>
+      <div style={columnHeader}>
+        <h3 style={columnTitle}>{title}</h3>
+        <span style={countBadge}>{events.length}</span>
+      </div>
+
+      {events.length === 0 && (
+        <div style={emptyColumn}>No events</div>
+      )}
 
       {events.map(event => (
-        <div key={event.id} style={cardStyle}>
-          <h4>{event.title}</h4>
-          <p>{event.place_name}</p>
-          <p>{new Date(event.date_start).toLocaleDateString()}</p>
+        <div key={event.id} style={eventCard}>
+          <h4 style={eventTitle}>{event.title}</h4>
 
-          {editable && (
-            <button onClick={() => onEdit(event)}>
-              Update
+          <div style={eventMeta}>{event.place_name}</div>
+          <div style={eventMeta}>
+            {new Date(event.date_start).toLocaleDateString()}
+          </div>
+
+          <div style={cardActions}>
+            {editable && (
+              <button style={secondaryBtn} onClick={() => onEdit(event)}>
+                Update
+              </button>
+            )}
+
+            <button style={dangerBtn} onClick={() => onDelete(event.id)}>
+              Delete
             </button>
-          )}
-
-          <button
-            style={{ background: "red", color: "white" }}
-            onClick={() => onDelete(event.id)}
-          >
-            Delete
-          </button>
+          </div>
         </div>
       ))}
     </div>
@@ -315,48 +339,58 @@ function CreateEventModal({ onClose, onCreated, editingEvent, onSaved }) {
 
   return (
     <div style={overlayStyle}>
-      <div style={modalStyle}>
-        <h3>Create Event</h3>
+      <div style={modalCard}>
 
-        <input name="organizer_name" placeholder="Name" value={form.organizer_name} onChange={handleChange} />
-        <input name="organizer_surname" placeholder="Surname" value={form.organizer_surname} onChange={handleChange} />
-        <input name="organizer_email" placeholder="E-mail" value={form.organizer_email} onChange={handleChange} />
-        <input name="organizer_phone" placeholder="Phone" value={form.organizer_phone} onChange={handleChange} />
+        {/* HEADER */}
+        <div style={modalHeader}>
+          <div>
+            <h3 style={modalTitle}>
+              {editingEvent ? "Update Event" : "Create Event"}
+            </h3>
+            <p style={modalSubtitle}>
+              Fill event details and pick location on the map.
+            </p>
+          </div>
 
-        <input name="title" placeholder="Event Title" value={form.title} onChange={handleChange} />
-        <textarea name="description" placeholder="Description" value={form.description} onChange={handleChange} />
+          <button style={closeBtn} onClick={onClose}>✕</button>
+        </div>
 
-        <select name="place_id" value={form.place_id} onChange={handleChange}>
-          <option value="">Select Municipality</option>
-          {places.map(place => (
-            <option key={place.id} value={place.id}>
-              {place.name}
-            </option>
-          ))}
-        </select>
+        {/* FORM */}
+        <div style={formGrid}>
 
-        <select name="category_id" value={form.category_id} onChange={handleChange}>
-          <option value="">Select Category</option>
-          {categories.map(cat => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
+          <input style={input} name="organizer_name" placeholder="Name" value={form.organizer_name} onChange={handleChange} />
+          <input style={input} name="organizer_surname" placeholder="Surname" value={form.organizer_surname} onChange={handleChange} />
+          <input style={input} name="organizer_email" placeholder="E-mail" value={form.organizer_email} onChange={handleChange} />
+          <input style={input} name="organizer_phone" placeholder="Phone" value={form.organizer_phone} onChange={handleChange} />
 
-        <input name="price" type="number" placeholder="Price (€)" value={form.price ?? ""} onChange={handleChange} />
+          <input style={inputFull} name="title" placeholder="Event Title" value={form.title} onChange={handleChange} />
+          <textarea style={textarea} name="description" placeholder="Description" value={form.description} onChange={handleChange} />
 
-        <input type="date" name="date_start" value={form.date_start} min={today} onChange={handleChange} />
-        <input type="date" name="date_end" value={form.date_end} min={form.date_start || today} onChange={handleChange} />
+          <select style={input} name="place_id" value={form.place_id} onChange={handleChange}>
+            <option value="">Select Municipality</option>
+            {places.map(place => (
+              <option key={place.id} value={place.id}>{place.name}</option>
+            ))}
+          </select>
 
-        <input name="image_url" placeholder="Image URL (optional)" value={form.image_url} onChange={handleChange} />
+          <select style={input} name="category_id" value={form.category_id} onChange={handleChange}>
+            <option value="">Select Category</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
 
-        <div style={{ height: "300px", marginTop: "10px" }}>
-          <MapContainer
-            center={[43.5, 16.5]}
-            zoom={8}
-            style={{ height: "100%", width: "100%" }}
-          >
+          <input style={input} name="price" type="number" placeholder="Price (€)" value={form.price ?? ""} onChange={handleChange} />
+
+          <input style={input} type="date" name="date_start" value={form.date_start} min={today} onChange={handleChange} />
+          <input style={input} type="date" name="date_end" value={form.date_end} min={form.date_start || today} onChange={handleChange} />
+
+          <input style={inputFull} name="image_url" placeholder="Image URL (optional)" value={form.image_url} onChange={handleChange} />
+        </div>
+
+        {/* MAP */}
+        <div style={mapWrapper}>
+          <MapContainer center={[43.5, 16.5]} zoom={8} style={{ height: "100%", width: "100%" }}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
             <GeoJSON
@@ -365,7 +399,7 @@ function CreateEventModal({ onClose, onCreated, editingEvent, onSaved }) {
                 color:
                   selectedPlace &&
                   feature.properties.NAME_2 === selectedPlace.name
-                    ? "red"
+                    ? "#ef4444"
                     : "#1e3a8a",
                 weight:
                   selectedPlace &&
@@ -385,50 +419,216 @@ function CreateEventModal({ onClose, onCreated, editingEvent, onSaved }) {
           </MapContainer>
         </div>
 
-        <div style={{ marginTop: "10px" }}>
-          <button onClick={handleSubmit}>Create</button>
-          <button onClick={onClose} style={{ marginLeft: "10px" }}>
-            Cancel
+        {/* ACTIONS */}
+        <div style={modalActions}>
+          <button style={secondaryBtn} onClick={onClose}>Cancel</button>
+          <button style={primaryBtn} onClick={handleSubmit}>
+            {editingEvent ? "Save Changes" : "Create Event"}
           </button>
         </div>
+
       </div>
     </div>
   );
 }
 
-const buttonStyle = {
-  marginBottom: "20px",
-  padding: "10px 15px",
-  background: "#1e3a8a",
-  color: "white",
-  border: "none",
-  cursor: "pointer"
+/* PAGE */
+
+const page = { paddingBottom: 60 };
+
+const container = {
+  maxWidth: 1200,
+  margin: "0 auto",
+  padding: "0 20px"
 };
 
-const cardStyle = {
-  border: "1px solid #ccc",
-  padding: "10px",
-  marginBottom: "10px"
+const pageHeader = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 24
 };
+
+const pageTitle = { fontSize: 32, fontWeight: 800 };
+const pageSubtitle = { color: "#64748b", marginTop: 4 };
+
+/* BOARD */
+
+const board = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3,1fr)",
+  gap: 20
+};
+
+const column = {
+  background: "#f8fafc",
+  padding: 16,
+  borderRadius: 20,
+  border: "1px solid #eef2f7",
+  minHeight: 320
+};
+
+const columnHeader = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 12
+};
+
+const columnTitle = { fontWeight: 800 };
+
+const countBadge = {
+  background: "white",
+  borderRadius: 999,
+  padding: "2px 10px",
+  fontSize: 12,
+  border: "1px solid #e2e8f0"
+};
+
+const emptyColumn = {
+  padding: 20,
+  textAlign: "center",
+  color: "#64748b"
+};
+
+/* EVENT CARD */
+
+const eventCard = {
+  background: "white",
+  borderRadius: 16,
+  padding: 14,
+  marginBottom: 12,
+  border: "1px solid #eef2f7",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.05)"
+};
+
+const eventTitle = { fontWeight: 700, marginBottom: 4 };
+
+const eventMeta = {
+  fontSize: 13,
+  color: "#64748b"
+};
+
+const cardActions = {
+  display: "flex",
+  gap: 8,
+  marginTop: 10
+};
+
+const dangerBtn = {
+  borderRadius: 10,
+  border: "none",
+  background: "#ef4444",
+  color: "white",
+  padding: "6px 10px",
+  cursor: "pointer",
+  fontWeight: 600
+};
+
+
+
 
 const overlayStyle = {
   position: "fixed",
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  background: "rgba(0,0,0,0.5)",
+  inset: 0,
+  background: "rgba(2,6,23,0.55)",
+  backdropFilter: "blur(4px)",
   display: "flex",
   justifyContent: "center",
-  alignItems: "center"
+  alignItems: "center",
+  zIndex: 20000
 };
 
-const modalStyle = {
+const modalCard = {
+  width: 620,
+  maxHeight: "92vh",
+  overflowY: "auto",
   background: "white",
-  padding: "20px",
-  width: "450px",
-  maxHeight: "90vh",
-  overflowY: "auto"
+  borderRadius: 24,
+  padding: 24,
+  boxShadow: "0 40px 120px rgba(0,0,0,0.35)"
+};
+
+const modalHeader = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  marginBottom: 16
+};
+
+const modalTitle = { fontSize: 22, fontWeight: 800 };
+const modalSubtitle = { color: "#64748b", fontSize: 14 };
+
+const closeBtn = {
+  border: "none",
+  background: "#f1f5f9",
+  borderRadius: 10,
+  width: 32,
+  height: 32,
+  cursor: "pointer",
+  fontWeight: 700
+};
+
+/* FORM */
+
+const formGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2,1fr)",
+  gap: 10,
+  marginBottom: 14
+};
+
+const input = {
+  padding: "10px 12px",
+  borderRadius: 10,
+  border: "1px solid #e2e8f0"
+};
+
+const inputFull = { ...input, gridColumn: "1 / -1" };
+
+const textarea = {
+  ...input,
+  gridColumn: "1 / -1",
+  minHeight: 90,
+  resize: "vertical"
+};
+
+/* MAP */
+
+const mapWrapper = {
+  height: 280,
+  borderRadius: 18,
+  overflow: "hidden",
+  border: "1px solid #eef2f7",
+  marginTop: 6
+};
+
+/* ACTIONS */
+
+const modalActions = {
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: 10,
+  marginTop: 16
+};
+
+const primaryBtn = {
+  padding: "12px 18px",
+  borderRadius: 12,
+  border: "none",
+  background: "linear-gradient(135deg,#2563eb,#4f46e5)",
+  color: "white",
+  fontWeight: 700,
+  cursor: "pointer"
+};
+
+const secondaryBtn = {
+  padding: "12px 18px",
+  borderRadius: 12,
+  border: "1px solid #e2e8f0",
+  background: "white",
+  fontWeight: 600,
+  cursor: "pointer"
 };
 
 export default MyEvents;

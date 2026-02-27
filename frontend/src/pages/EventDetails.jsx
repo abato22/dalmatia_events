@@ -107,106 +107,244 @@ function EventDetails() {
     }
   };
 
+  function formatDate(date) {
+    if (!date) return "";
+    return new Date(date).toLocaleDateString("hr-HR");
+  }
+
   /* ================= UI ================= */
 
   if (!event) return <p>Loading...</p>;
 
   return (
-    <div>
-      <button
-        onClick={() => {
-          if (window.history.length > 1) navigate(-1);
-          else navigate("/explore");
-        }}
-        style={backBtn}
-      >
-        ← Back to Explore
-      </button>
+    <div style={page}>
+      <div style={container}>
 
-      <div style={headerRow}>
-        <h2>{event.title}</h2>
-
-        <button onClick={toggleWishlist} style={wishlistBtn(inWishlist)}>
-          {inWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
+        {/* BACK */}
+        <button
+          onClick={() => {
+            if (window.history.length > 1) navigate(-1);
+            else navigate("/explore");
+          }}
+          style={backBtn}
+        >
+          ← Back to Explore
         </button>
-      </div>
 
-      <p>{event.description}</p>
-      <p><strong>Place:</strong> {event.place_name}</p>
-      <p><strong>Category:</strong> {event.category_name}</p>
-      <p><strong>Rating:</strong> {event.average_rating} ⭐ ({event.reviews_count})</p>
+        {/* HEADER CARD */}
+        <div style={heroCard}>
+          <div style={headerRow}>
+            <h1 style={title}>{event.title}</h1>
 
-      <hr />
-
-      <h3>Reviews</h3>
-
-      {reviews.length === 0 ? (
-        <p>No reviews yet.</p>
-      ) : (
-        reviews.map(review => (
-          <div key={review.id} style={{ marginBottom: 10 }}>
-            <strong>{review.username}</strong> — {review.rating} ⭐
-            <p>{review.comment}</p>
+            <button onClick={toggleWishlist} style={wishlistBtn(inWishlist)}>
+              {inWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
+            </button>
           </div>
-        ))
-      )}
 
-      <hr />
+          <p style={description}>{event.description}</p>
 
-      {token ? (
-        <form onSubmit={handleSubmit}>
-          <h3>Add Review</h3>
+          <div style={metaGrid}>
+            <div><strong>Place</strong><br />{event.place_name}</div>
+            <div><strong>Category</strong><br />{event.category_name}</div>
+            <div><strong>Rating</strong><br />{event.average_rating} ⭐ ({event.reviews_count})</div>
+            <div>
+              <strong>Date</strong><br />
+              {formatDate(event.date_start)}
+              {event.date_end ? ` — ${formatDate(event.date_end)}` : ""}
+            </div>
+          </div>
+        </div>
 
-          <select value={rating} onChange={(e) => setRating(Number(e.target.value))}>
-            {[1,2,3,4,5].map(n => (
-              <option key={n} value={n}>{n} ⭐</option>
-            ))}
-          </select>
+        {/* REVIEWS */}
+        <div style={sectionCard}>
+          <h3 style={sectionTitle}>Reviews</h3>
 
-          <br /><br />
+          {reviews.length === 0 ? (
+            <div style={emptyBox}>No reviews yet.</div>
+          ) : (
+            reviews.map(review => (
+              <div key={review.id} style={reviewCard}>
+                <div style={reviewHeader}>
+                  <strong>{review.username}</strong>
+                  <span>{review.rating} ⭐</span>
+                </div>
+                <p style={reviewText}>{review.comment}</p>
+              </div>
+            ))
+          )}
+        </div>
 
-          <textarea
-            placeholder="Write your comment..."
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            required
-          />
+        {/* ADD REVIEW */}
+        <div style={sectionCard}>
+          {token ? (
+            <form onSubmit={handleSubmit}>
+              <h3 style={sectionTitle}>Add Review</h3>
 
-          <br /><br />
+              <div style={reviewFormRow}>
+                <select
+                  style={input}
+                  value={rating}
+                  onChange={(e) => setRating(Number(e.target.value))}
+                >
+                  {[1,2,3,4,5].map(n => (
+                    <option key={n} value={n}>{n} ⭐</option>
+                  ))}
+                </select>
+              </div>
 
-          <button type="submit">Submit Review</button>
-        </form>
-      ) : (
-        <p>You must login to add a review.</p>
-      )}
+              <textarea
+                style={textarea}
+                placeholder="Write your comment..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                required
+              />
+
+              <button style={primaryBtn} type="submit">
+                Submit Review
+              </button>
+            </form>
+          ) : (
+            <div style={emptyBox}>
+              You must login to add a review.
+            </div>
+          )}
+        </div>
+
+      </div>
     </div>
   );
 }
 
-/* ================= STYLES ================= */
+const page = { paddingBottom: 60 };
+
+const container = {
+  maxWidth: 900,
+  margin: "0 auto",
+  padding: "0 20px"
+};
+
+const backBtn = {
+  marginBottom: 16,
+  padding: "8px 14px",
+  borderRadius: 10,
+  border: "1px solid #e2e8f0",
+  background: "white",
+  cursor: "pointer",
+  fontWeight: 600
+};
+
+/* HERO */
+
+const heroCard = {
+  background: "white",
+  borderRadius: 24,
+  padding: 24,
+  border: "1px solid #eef2f7",
+  boxShadow: "0 20px 60px rgba(0,0,0,0.06)",
+  marginBottom: 20
+};
+
+const title = { fontSize: 32, fontWeight: 800 };
+
+const description = {
+  color: "#475569",
+  marginTop: 10,
+  marginBottom: 16
+};
 
 const headerRow = {
   display: "flex",
   justifyContent: "space-between",
-  alignItems: "center"
+  alignItems: "center",
+  gap: 12
 };
 
 const wishlistBtn = (active) => ({
-  padding: "8px 14px",
-  borderRadius: 8,
+  padding: "10px 16px",
+  borderRadius: 12,
   border: "none",
-  background: active ? "#ef4444" : "#2563eb",
+  background: active ? "#ef4444" : "linear-gradient(135deg,#2563eb,#4f46e5)",
   color: "white",
-  cursor: "pointer"
+  fontWeight: 700,
+  cursor: "pointer",
+  whiteSpace: "nowrap"
 });
 
-const backBtn = {
-  marginBottom: 20,
-  padding: "6px 12px",
-  borderRadius: 6,
-  border: "1px solid #ccc",
+/* META */
+
+const metaGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))",
+  gap: 14,
+  fontSize: 14
+};
+
+/* SECTIONS */
+
+const sectionCard = {
   background: "white",
+  borderRadius: 20,
+  padding: 20,
+  border: "1px solid #eef2f7",
+  marginBottom: 20,
+  boxShadow: "0 12px 30px rgba(0,0,0,0.05)"
+};
+
+const sectionTitle = { fontWeight: 800, marginBottom: 12 };
+
+/* REVIEWS */
+
+const reviewCard = {
+  padding: 12,
+  borderRadius: 12,
+  border: "1px solid #eef2f7",
+  marginBottom: 10
+};
+
+const reviewHeader = {
+  display: "flex",
+  justifyContent: "space-between",
+  marginBottom: 4
+};
+
+const reviewText = { color: "#475569" };
+
+/* FORM */
+
+const reviewFormRow = { marginBottom: 10 };
+
+const input = {
+  padding: "10px 12px",
+  borderRadius: 10,
+  border: "1px solid #e2e8f0"
+};
+
+const textarea = {
+  width: "100%",
+  minHeight: 90,
+  padding: 12,
+  borderRadius: 12,
+  border: "1px solid #e2e8f0",
+  marginBottom: 12
+};
+
+const primaryBtn = {
+  padding: "12px 18px",
+  borderRadius: 12,
+  border: "none",
+  background: "linear-gradient(135deg,#2563eb,#4f46e5)",
+  color: "white",
+  fontWeight: 700,
   cursor: "pointer"
+};
+
+const emptyBox = {
+  padding: 20,
+  textAlign: "center",
+  borderRadius: 12,
+  border: "1px dashed #e2e8f0",
+  color: "#64748b"
 };
 
 export default EventDetails;
