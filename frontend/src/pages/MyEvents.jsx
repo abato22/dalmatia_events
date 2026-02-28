@@ -380,12 +380,10 @@ function CreateEventModal({ onClose, onCreated, editingEvent, onSaved }) {
             ))}
           </select>
 
-          <input style={input} name="price" type="number" placeholder="Price (€)" value={form.price ?? ""} onChange={handleChange} />
-
           <input style={input} type="date" name="date_start" value={form.date_start} min={today} onChange={handleChange} />
           <input style={input} type="date" name="date_end" value={form.date_end} min={form.date_start || today} onChange={handleChange} />
 
-          <input style={inputFull} name="image_url" placeholder="Image URL (optional)" value={form.image_url} onChange={handleChange} />
+          <input style={input} name="price" type="number" placeholder="Price (€)" value={form.price ?? ""} onChange={handleChange} />
         </div>
 
         {/* MAP */}

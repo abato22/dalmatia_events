@@ -6,6 +6,7 @@ function Layout() {
   const location = useLocation();
 
   const [token, setToken] = useState(localStorage.getItem("token"));
+  const [hovered, setHovered] = useState(null);
 
   useEffect(() => {
     setToken(localStorage.getItem("token"));
@@ -23,24 +24,54 @@ function Layout() {
 
   const isActive = (path) => location.pathname === path;
 
+  const navItem = (path, label) => {
+    const active = isActive(path);
+    const hover = hovered === path;
+
+    return (
+      <Link
+        key={path}
+        to={path}
+        style={{
+          ...navLink,
+          background: active
+            ? DALMA_BLUE
+            : hover
+            ? DALMA_YELLOW
+            : "transparent",
+          color: active ? "white" : hover ? "#0f172a" : "#334155"
+        }}
+        onMouseEnter={() => setHovered(path)}
+        onMouseLeave={() => setHovered(null)}
+      >
+        {label}
+      </Link>
+    );
+  };
+
   return (
     <>
       <nav style={navWrapper}>
         <div style={navInner}>
 
+          {/* LOGO */}
           <Link to="/" style={logo}>
-            Dalmatia Events
+            <img src="/logo-icon.jpg" alt="" style={logoImg} />
+            <span style={logoDalmatia}>Dalmatia</span>
+            <span style={logoEvents}>Events</span>
           </Link>
 
+          {/* NAV */}
           <div style={center}>
-            <Link to="/" style={navLink(isActive("/"))}>Home</Link>
-            <Link to="/explore" style={navLink(isActive("/explore"))}>Explore</Link>
-            <Link to="/my-events" style={navLink(isActive("/my-events"))}>My Events</Link>
-            <Link to="/wishlist" style={navLink(isActive("/wishlist"))}>Wishlist</Link>
+            {navItem("/", "Home")}
+            {navItem("/explore", "Explore")}
+            {navItem("/my-events", "My Events")}
+            {navItem("/wishlist", "Wishlist")}
           </div>
 
+          {/* AUTH */}
           <div style={right}>
-            <button onClick={handleAuthClick} style={authBtn(token)}>
+            <button onClick={handleAuthClick} style={authBtn}>
               {token ? "Logout" : "Log In / Sign Up"}
             </button>
           </div>
@@ -48,16 +79,27 @@ function Layout() {
         </div>
       </nav>
 
-      <main style={content}>
-        <Outlet />
-      </main>
+      <div style={pageWrapper}>
+        <main style={content}>
+          <Outlet />
+        </main>
+
+        <footer style={footer}>
+          © 2026 Dalmatia Events. All rights reserved.
+        </footer>
+      </div>
     </>
   );
 }
 
 export default Layout;
 
-/* ================= DESIGN TOKENS ================= */
+/* ================= COLORS ================= */
+
+const DALMA_BLUE = "#2563eb";
+const DALMA_YELLOW = "#facc15";
+
+/* ================= CONTAINER ================= */
 
 const container = {
   maxWidth: 1200,
@@ -87,13 +129,33 @@ const navInner = {
   alignItems: "center"
 };
 
+/* ================= LOGO ================= */
+
 const logo = {
-  fontWeight: 800,
-  fontSize: 18,
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
   textDecoration: "none",
-  color: "#0f172a",
-  letterSpacing: -0.2
+  fontWeight: 800,
+  fontSize: 30
 };
+
+const logoImg = {
+  width: 28,
+  height: 28
+};
+
+const logoDalmatia = {
+  color: DALMA_BLUE,
+  fontWeight: 800
+};
+
+const logoEvents = {
+  color: DALMA_YELLOW,
+  fontWeight: 800
+};
+
+/* ================= NAV LINKS ================= */
 
 const center = {
   display: "flex",
@@ -101,16 +163,15 @@ const center = {
   gap: 10
 };
 
-const navLink = (active) => ({
+const navLink = {
   padding: "8px 14px",
   borderRadius: 10,
   textDecoration: "none",
-  fontSize: 14,
+  fontSize: 20,
   fontWeight: 600,
-  color: active ? "#1e293b" : "#475569",
-  background: active ? "#f1f5f9" : "transparent",
-  transition: "all .18s ease"
-});
+  transition: "all .18s ease",
+  cursor: "pointer"
+};
 
 const right = {
   display: "flex",
@@ -119,22 +180,16 @@ const right = {
 
 /* ================= AUTH BUTTON ================= */
 
-const authBtn = (token) => ({
+const authBtn = {
   padding: "10px 18px",
-  borderRadius: 12,
-  border: token ? "1px solid #e2e8f0" : "none",
-  background: token
-    ? "white"
-    : "linear-gradient(135deg,#2563eb,#4f46e5)",
-  color: token ? "#0f172a" : "white",
-  fontWeight: 700,
-  fontSize: 14,
+  borderRadius: 10,
+  border: "none",
+  background: DALMA_BLUE,
+  color: "white",
+  fontWeight: 600,
+  fontSize: 20,
   cursor: "pointer",
-  boxShadow: token
-    ? "0 6px 18px rgba(0,0,0,0.06)"
-    : "0 12px 26px rgba(37,99,235,0.35)",
-  transition: "all .18s ease"
-});
+};
 
 /* ================= CONTENT ================= */
 
@@ -142,4 +197,20 @@ const content = {
   paddingTop: 96,
   minHeight: "100vh",
   background: "#ffffff"
+};
+
+const pageWrapper = {
+  minHeight: "100vh",
+  display: "flex",
+  flexDirection: "column"
+};
+
+const footer = {
+  marginTop: "auto",
+  padding: "24px 20px",
+  textAlign: "center",
+  fontSize: 14,
+  color: "#64748b",
+  borderTop: "1px solid #eef2f7",
+  background: "#fafcff"
 };
