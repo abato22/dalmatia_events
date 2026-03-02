@@ -14,6 +14,7 @@ function Register() {
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [btnHover, setBtnHover] = useState(false);
 
   const handleChange = (e) => {
     setForm({
@@ -44,9 +45,7 @@ function Register() {
       );
 
       localStorage.setItem("token", res.data.token);
-
       toast.success("Account created 🎉");
-
       navigate("/explore");
 
     } catch (err) {
@@ -59,45 +58,63 @@ function Register() {
   return (
     <div style={wrapper}>
       <form onSubmit={handleRegister} style={card}>
-        <h2>Register</h2>
 
-        <input
-          name="username"
-          placeholder="Username"
-          value={form.username}
-          onChange={handleChange}
-          style={input}
-        />
+        <div style={header}>
+          <h1 style={title}>Create account</h1>
+          <p style={subtitle}>Join Dalmatia Events and start exploring.</p>
+        </div>
 
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-          style={input}
-        />
-
-        <div style={{ position: "relative" }}>
+        <div style={formGroup}>
+          <label style={label}>Username</label>
           <input
-            name="password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            value={form.password}
+            name="username"
+            value={form.username}
             onChange={handleChange}
             style={input}
           />
-
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            style={eyeBtn}
-          >
-            {showPassword ? "Hide" : "Show"}
-          </button>
         </div>
 
-        <button disabled={loading} style={button}>
+        <div style={formGroup}>
+          <label style={label}>Email</label>
+          <input
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={handleChange}
+            style={input}
+          />
+        </div>
+
+        <div style={formGroup}>
+          <label style={label}>Password</label>
+          <div style={{ position: "relative" }}>
+            <input
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={form.password}
+              onChange={handleChange}
+              style={input}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={eyeBtn}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+        </div>
+
+        <button
+          disabled={loading}
+          style={{
+            ...primaryBtn,
+            background: btnHover ? DALMA_YELLOW : DALMA_BLUE,
+            color: btnHover ? "#0f172a" : "white"
+          }}
+          onMouseEnter={() => setBtnHover(true)}
+          onMouseLeave={() => setBtnHover(false)}
+        >
           {loading ? "Creating..." : "Register"}
         </button>
 
@@ -109,9 +126,11 @@ function Register() {
           ← Back to Home
         </button>
 
-        <p>
-          Already have an account? <Link to="/login">Login</Link>
+        <p style={loginText}>
+          Already have an account?{" "}
+          <Link to="/login" style={loginLink}>Login</Link>
         </p>
+
       </form>
     </div>
   );
@@ -119,55 +138,104 @@ function Register() {
 
 export default Register;
 
-/* styles same as login */
+/* ================= COLORS ================= */
+
+const DALMA_BLUE = "#2563eb";
+const DALMA_YELLOW = "#facc15";
+
+/* ================= STYLES ================= */
 
 const wrapper = {
+  minHeight: "100vh",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
-  height: "80vh"
+  background: "linear-gradient(135deg,#eff6ff,#fefce8)"
 };
 
 const card = {
-  width: 320,
-  padding: 24,
-  border: "1px solid #ddd",
-  borderRadius: 12,
+  width: 400,
+  padding: 32,
+  borderRadius: 24,
+  background: "white",
+  boxShadow: "0 30px 80px rgba(0,0,0,0.08)",
+  border: "1px solid #eef2f7",
   display: "flex",
   flexDirection: "column",
-  gap: 10,
-  background: "white"
+  gap: 18
+};
+
+const header = {
+  marginBottom: 10
+};
+
+const title = {
+  fontSize: 28,
+  fontWeight: 800
+};
+
+const subtitle = {
+  color: "#64748b",
+  fontSize: 14
+};
+
+const formGroup = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 6
+};
+
+const label = {
+  fontSize: 13,
+  fontWeight: 600,
+  color: "#334155"
 };
 
 const input = {
-  padding: 10,
-  borderRadius: 8,
-  border: "1px solid #ccc",
+  padding: "12px 14px",
+  borderRadius: 12,
+  border: "1px solid #e2e8f0",
+  fontSize: 14,
   width: "100%"
 };
 
-const button = {
-  padding: 10,
-  borderRadius: 8,
+const primaryBtn = {
+  padding: "12px",
+  borderRadius: 14,
   border: "none",
-  background: "#16a34a",
-  color: "white",
-  cursor: "pointer"
+  fontWeight: 700,
+  cursor: "pointer",
+  transition: "all .18s ease"
 };
 
 const secondaryBtn = {
-  padding: 10,
-  borderRadius: 8,
-  border: "1px solid #ccc",
+  padding: "10px",
+  borderRadius: 12,
+  border: "1px solid #e2e8f0",
   background: "white",
+  fontWeight: 600,
   cursor: "pointer"
+};
+
+const loginText = {
+  textAlign: "center",
+  fontSize: 14,
+  color: "#475569"
+};
+
+const loginLink = {
+  color: DALMA_BLUE,
+  fontWeight: 600,
+  textDecoration: "none"
 };
 
 const eyeBtn = {
   position: "absolute",
-  right: 8,
-  top: 6,
+  right: 10,
+  top: 10,
   border: "none",
   background: "transparent",
-  cursor: "pointer"
+  cursor: "pointer",
+  fontSize: 12,
+  color: "#64748b"
 };

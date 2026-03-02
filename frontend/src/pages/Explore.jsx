@@ -12,6 +12,17 @@ import {
   useMap
 } from "react-leaflet";
 
+import "leaflet/dist/leaflet.css";
+
+const yellowPin = new L.Icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [15, 25],
+  iconAnchor: [12, 31],
+  popupAnchor: [1, -34],
+  shadowSize: [21, 21]
+});
+
 const DALMATIA_BOUNDS = [
   [42.0, 14.8],
   [45.0, 18.5]
@@ -202,6 +213,7 @@ function Explore() {
                 event.location_point ? (
                   <Marker
                     key={event.id}
+                    icon={yellowPin}
                     position={[
                       event.location_point.coordinates[1],
                       event.location_point.coordinates[0]

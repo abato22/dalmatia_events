@@ -11,6 +11,17 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import municipalitiesData from "../data/dalmatia-municipalities.json";
 
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+const yellowPin = new L.Icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png",
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
 function MyEvents() {
   const token = localStorage.getItem("token");
 
@@ -297,7 +308,7 @@ function CreateEventModal({ onClose, onCreated, editingEvent, onSaved }) {
     });
 
     return markerPosition ? (
-      <Marker position={markerPosition} />
+      <Marker position={markerPosition} icon={yellowPin} />
     ) : null;
   }
 
