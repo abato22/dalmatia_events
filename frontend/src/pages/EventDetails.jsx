@@ -13,6 +13,7 @@ function EventDetails() {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [inWishlist, setInWishlist] = useState(false);
+  const [isHovered, setIsHovered] = useState(false); // New state for back button hover
 
   /* ================= FETCH ================= */
 
@@ -92,11 +93,11 @@ function EventDetails() {
         toast.success("Removed from wishlist");
 
       } else {
-          await axios.post(
-            `http://localhost:3000/wishlist/${event.id}`,
-            {},
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
+        await axios.post(
+          `http://localhost:3000/wishlist/${event.id}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
         setInWishlist(true);
         toast.success("Added to wishlist");
@@ -109,106 +110,181 @@ function EventDetails() {
 
   function formatDate(date) {
     if (!date) return "";
-    return new Date(date).toLocaleDateString("hr-HR");
+    return new Date(date).toLocaleDateString("hr-HR", {
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
   }
 
   /* ================= UI ================= */
 
-  if (!event) return <p>Loading...</p>;
+  if (!event) return (
+    <div style={loadingWrapper}>
+      <div style={spinner}></div>
+      <p>Loading experience...</p>
+    </div>
+  );
 
   return (
     <div style={page}>
       <div style={container}>
 
-        {/* BACK */}
-        <button
-          onClick={() => {
-            if (window.history.length > 1) navigate(-1);
-            else navigate("/explore");
-          }}
-          style={backBtn}
-        >
-          ← Back to Explore
-        </button>
+        {/* TOP NAVIGATION */}
+        <div style={topNav}>
+          <button
+            onClick={() => {
+              if (window.history.length > 1) navigate(-1);
+              else navigate("/explore");
+            }}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            style={{ 
+              ...backBtn, 
+              color: isHovered ? "#2563eb" : "#64748b", // Hover logic applied here
+              transform: isHovered ? "translateX(-4px)" : "translateX(0)" 
+            }}
+          >
+            ← Back to Explore
+          </button>
+        </div>
 
-        {/* HEADER CARD */}
-        <div style={heroCard}>
-          <div style={headerRow}>
-            <h1 style={title}>{event.title}</h1>
-
-            <button onClick={toggleWishlist} style={wishlistBtn(inWishlist)}>
-              {inWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
-            </button>
-          </div>
-
-          <p style={description}>{event.description}</p>
-
-          <div style={metaGrid}>
-            <div><strong>Place</strong><br />{event.place_name}</div>
-            <div><strong>Category</strong><br />{event.category_name}</div>
-            <div><strong>Rating</strong><br />{event.average_rating} ⭐ ({event.reviews_count})</div>
-            <div>
-              <strong>Date</strong><br />
-              {formatDate(event.date_start)}
-              {event.date_end ? ` — ${formatDate(event.date_end)}` : ""}
+        {/* HERO SECTION (Text Only) */}
+        <div style={heroSection}>
+          <div style={heroContent}>
+            <span style={categoryBadge}>{event.category_name}</span>
+            <div style={heroHeaderRow}>
+              <h1 style={title}>{event.title}</h1>
             </div>
-          </div>
-        </div>
-
-        {/* REVIEWS */}
-        <div style={sectionCard}>
-          <h3 style={sectionTitle}>Reviews</h3>
-
-          {reviews.length === 0 ? (
-            <div style={emptyBox}>No reviews yet.</div>
-          ) : (
-            reviews.map(review => (
-              <div key={review.id} style={reviewCard}>
-                <div style={reviewHeader}>
-                  <strong>{review.username}</strong>
-                  <span>{review.rating} ⭐</span>
-                </div>
-                <p style={reviewText}>{review.comment}</p>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* ADD REVIEW */}
-        <div style={sectionCard}>
-          {token ? (
-            <form onSubmit={handleSubmit}>
-              <h3 style={sectionTitle}>Add Review</h3>
-
-              <div style={reviewFormRow}>
-                <select
-                  style={input}
-                  value={rating}
-                  onChange={(e) => setRating(Number(e.target.value))}
-                >
-                  {[1,2,3,4,5].map(n => (
-                    <option key={n} value={n}>{n} ⭐</option>
-                  ))}
-                </select>
-              </div>
-
-              <textarea
-                style={textarea}
-                placeholder="Write your comment..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                required
-              />
-
-              <button style={primaryBtn} type="submit">
-                Submit Review
+            <p style={locationSubtitle}>📍 {event.place_name}</p>
+            
+            <div style={actionRow}>
+              <button onClick={toggleWishlist} style={wishlistBtn(inWishlist)}>
+                {inWishlist ? "♥ Saved to Wishlist" : "♡ Add to Wishlist"}
               </button>
-            </form>
-          ) : (
-            <div style={emptyBox}>
-              You must login to add a review.
+              <div style={ratingBadge}>
+                ⭐ {event.average_rating ? Number(event.average_rating).toFixed(1) : "New"} 
+                <span style={reviewCount}>({event.reviews_count} reviews)</span>
+              </div>
             </div>
-          )}
+          </div>
+        </div>
+
+        {/* MAIN CONTENT GRID */}
+        <div style={contentGrid}>
+          
+          {/* LEFT COLUMN: Details & About */}
+          <div style={mainCol}>
+            <div style={card}>
+              <h3 style={sectionTitle}>About this event</h3>
+              <p style={description}>{event.description}</p>
+            </div>
+
+            {/* REVIEWS SECTION */}
+            <div style={card}>
+              <div style={sectionHeader}>
+                <h3 style={sectionTitle}>Guest Reviews</h3>
+                <span style={ratingBadgeSmall}>⭐ {event.average_rating || "0"}</span>
+              </div>
+
+              {reviews.length === 0 ? (
+                <div style={emptyState}>
+                  <div style={emptyIcon}>💬</div>
+                  <p>No reviews yet. Be the first to share your experience!</p>
+                </div>
+              ) : (
+                <div style={reviewList}>
+                  {reviews.map(review => (
+                    <div key={review.id} style={reviewCard}>
+                      <div style={reviewHeader}>
+                        <div style={reviewerInfo}>
+                          <div style={avatar}>{review.username.charAt(0).toUpperCase()}</div>
+                          <strong style={reviewerName}>{review.username}</strong>
+                        </div>
+                        <div style={stars}>
+                          {"⭐".repeat(review.rating)}
+                          <span style={emptyStars}>{"⭐".repeat(5 - review.rating)}</span>
+                        </div>
+                      </div>
+                      <p style={reviewText}>{review.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Sidebar Meta & Forms */}
+          <div style={sidebarCol}>
+            
+            {/* DATE & TIME CARD */}
+            <div style={card}>
+              <h3 style={sectionTitleSmall}>When & Where</h3>
+              <div style={metaItem}>
+                <span style={metaIcon}>📅</span>
+                <div>
+                  <div style={metaLabel}>Starts</div>
+                  <div style={metaValue}>{formatDate(event.date_start)}</div>
+                </div>
+              </div>
+              {event.date_end && (
+                <div style={metaItem}>
+                  <span style={metaIcon}>🏁</span>
+                  <div>
+                    <div style={metaLabel}>Ends</div>
+                    <div style={metaValue}>{formatDate(event.date_end)}</div>
+                  </div>
+                </div>
+              )}
+              <div style={metaItem}>
+                <span style={metaIcon}>📍</span>
+                <div>
+                  <div style={metaLabel}>Location</div>
+                  <div style={metaValue}>{event.place_name}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* ADD REVIEW FORM */}
+            <div style={card}>
+              <h3 style={sectionTitleSmall}>Leave a Review</h3>
+              {token ? (
+                <form onSubmit={handleSubmit} style={formContainer}>
+                  <label style={inputLabel}>Rating</label>
+                  <select
+                    style={selectInput}
+                    value={rating}
+                    onChange={(e) => setRating(Number(e.target.value))}
+                  >
+                    <option value={5}>5 ⭐ - Excellent</option>
+                    <option value={4}>4 ⭐ - Very Good</option>
+                    <option value={3}>3 ⭐ - Average</option>
+                    <option value={2}>2 ⭐ - Poor</option>
+                    <option value={1}>1 ⭐ - Terrible</option>
+                  </select>
+
+                  <label style={inputLabel}>Your experience</label>
+                  <textarea
+                    style={textarea}
+                    placeholder="What did you love about it?"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    required
+                  />
+
+                  <button style={primaryBtn} type="submit">
+                    Post Review
+                  </button>
+                </form>
+              ) : (
+                <div style={loginPrompt}>
+                  <p>You must be logged in to leave a review.</p>
+                </div>
+              )}
+            </div>
+
+          </div>
         </div>
 
       </div>
@@ -216,135 +292,71 @@ function EventDetails() {
   );
 }
 
-const page = { paddingBottom: 60 };
+/* ================= STYLES ================= */
 
-const container = {
-  maxWidth: 900,
-  margin: "0 auto",
-  padding: "0 20px"
-};
+// Global/Layout
+const page = { background: "#f8fafc", minHeight: "100vh", padding: "40px 0", fontFamily: "system-ui, -apple-system, sans-serif", color: "#0f172a" };
+const container = { maxWidth: 1100, margin: "0 auto", padding: "0 24px" };
+const topNav = { marginBottom: 24 };
 
-const backBtn = {
-  marginBottom: 16,
-  padding: "8px 14px",
-  borderRadius: 10,
-  border: "1px solid #e2e8f0",
-  background: "white",
-  cursor: "pointer",
-  fontWeight: 600
-};
+const loadingWrapper = { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", color: "#64748b" };
+const spinner = { width: 40, height: 40, border: "4px solid #e2e8f0", borderTop: "4px solid #2563eb", borderRadius: "50%", animation: "spin 1s linear infinite", marginBottom: 16 };
 
-/* HERO */
+// Buttons
+const backBtn = { background: "transparent", border: "none", fontWeight: 600, fontSize: 15, cursor: "pointer", padding: 0, display: "inline-flex", alignItems: "center", gap: 8, transition: "all 0.2s ease-in-out" };
+const wishlistBtn = (active) => ({ padding: "12px 24px", borderRadius: 100, border: "none", background: active ? "#fee2e2" : "#2563eb", color: active ? "#ef4444" : "white", fontWeight: 700, fontSize: 15, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, transition: "all 0.2s" });
+const primaryBtn = { width: "100%", padding: "14px", borderRadius: 12, border: "none", background: "#0f172a", color: "white", fontWeight: 600, fontSize: 16, cursor: "pointer", transition: "background 0.2s" };
 
-const heroCard = {
-  background: "white",
-  borderRadius: 24,
-  padding: 24,
-  border: "1px solid #eef2f7",
-  boxShadow: "0 20px 60px rgba(0,0,0,0.06)",
-  marginBottom: 20
-};
+// Hero Section
+const heroSection = { background: "white", borderRadius: 24, border: "1px solid #e2e8f0", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)", marginBottom: 32 };
+const heroContent = { padding: "40px" };
+const categoryBadge = { display: "inline-block", background: "#e0e7ff", color: "#2563eb", padding: "6px 14px", borderRadius: 100, fontWeight: 700, fontSize: 13, marginBottom: 16 };
+const heroHeaderRow = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 };
+const title = { fontSize: 36, fontWeight: 800, margin: "0 0 12px 0", lineHeight: 1.2, letterSpacing: "-0.02em" };
+const locationSubtitle = { fontSize: 18, color: "#64748b", margin: "0 0 24px 0", fontWeight: 500 };
+const actionRow = { display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap", borderTop: "1px solid #f1f5f9", paddingTop: 24 };
 
-const title = { fontSize: 32, fontWeight: 800 };
+// Ratings
+const ratingBadge = { fontSize: 18, fontWeight: 700, color: "#0f172a", display: "flex", alignItems: "center", gap: 6 };
+const ratingBadgeSmall = { fontSize: 16, fontWeight: 700, background: "#fef3c7", color: "#d97706", padding: "4px 12px", borderRadius: 100 };
+const reviewCount = { color: "#64748b", fontWeight: 400, fontSize: 15 };
 
-const description = {
-  color: "#475569",
-  marginTop: 10,
-  marginBottom: 16
-};
+// Grid Layout
+const contentGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 32, alignItems: "start" };
+const mainCol = { display: "flex", flexDirection: "column", gap: 32, gridColumn: "span 2" }; 
+const sidebarCol = { display: "flex", flexDirection: "column", gap: 24 };
 
-const headerRow = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: 12
-};
+// Cards & Content
+const card = { background: "white", borderRadius: 24, padding: 32, border: "1px solid #e2e8f0", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)" };
+const sectionHeader = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 };
+const sectionTitle = { fontSize: 22, fontWeight: 700, margin: "0 0 16px 0" };
+const sectionTitleSmall = { fontSize: 18, fontWeight: 700, margin: "0 0 20px 0" };
+const description = { color: "#334155", fontSize: 16, lineHeight: 1.7 };
 
-const wishlistBtn = (active) => ({
-  padding: "10px 16px",
-  borderRadius: 12,
-  border: "none",
-  background: active ? "#ef4444" : "linear-gradient(135deg,#2563eb,#4f46e5)",
-  color: "white",
-  fontWeight: 700,
-  cursor: "pointer",
-  whiteSpace: "nowrap"
-});
+// Meta Items (Sidebar)
+const metaItem = { display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 20 };
+const metaIcon = { fontSize: 24, background: "#f1f5f9", width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12 };
+const metaLabel = { fontSize: 13, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 };
+const metaValue = { fontSize: 15, fontWeight: 600, color: "#0f172a" };
 
-/* META */
+// Reviews
+const reviewList = { display: "flex", flexDirection: "column", gap: 20 };
+const reviewCard = { padding: 20, borderRadius: 16, border: "1px solid #f1f5f9", background: "#f8fafc" };
+const reviewHeader = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 };
+const reviewerInfo = { display: "flex", alignItems: "center", gap: 12 };
+const avatar = { width: 40, height: 40, borderRadius: "50%", background: "#2563eb", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 16 };
+const reviewerName = { fontSize: 15, color: "#0f172a" };
+const stars = { fontSize: 14 };
+const emptyState = { textAlign: "center", padding: "40px 20px", color: "#64748b" };
+const emptyIcon = { fontSize: 40, marginBottom: 12, opacity: 0.5 };
+const emptyStars = { opacity: 0.2 };
+const reviewText = { color: "#475569", lineHeight: 1.6, margin: 0 };
 
-const metaGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))",
-  gap: 14,
-  fontSize: 14
-};
-
-/* SECTIONS */
-
-const sectionCard = {
-  background: "white",
-  borderRadius: 20,
-  padding: 20,
-  border: "1px solid #eef2f7",
-  marginBottom: 20,
-  boxShadow: "0 12px 30px rgba(0,0,0,0.05)"
-};
-
-const sectionTitle = { fontWeight: 800, marginBottom: 12 };
-
-/* REVIEWS */
-
-const reviewCard = {
-  padding: 12,
-  borderRadius: 12,
-  border: "1px solid #eef2f7",
-  marginBottom: 10
-};
-
-const reviewHeader = {
-  display: "flex",
-  justifyContent: "space-between",
-  marginBottom: 4
-};
-
-const reviewText = { color: "#475569" };
-
-/* FORM */
-
-const reviewFormRow = { marginBottom: 10 };
-
-const input = {
-  padding: "10px 12px",
-  borderRadius: 10,
-  border: "1px solid #e2e8f0"
-};
-
-const textarea = {
-  width: "100%",
-  minHeight: 90,
-  padding: 12,
-  borderRadius: 12,
-  border: "1px solid #e2e8f0",
-  marginBottom: 12
-};
-
-const primaryBtn = {
-  padding: "12px 18px",
-  borderRadius: 12,
-  border: "none",
-  background: "linear-gradient(135deg,#2563eb,#4f46e5)",
-  color: "white",
-  fontWeight: 700,
-  cursor: "pointer"
-};
-
-const emptyBox = {
-  padding: 20,
-  textAlign: "center",
-  borderRadius: 12,
-  border: "1px dashed #e2e8f0",
-  color: "#64748b"
-};
+// Forms
+const formContainer = { display: "flex", flexDirection: "column", gap: 16 };
+const inputLabel = { fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: -8 };
+const selectInput = { padding: "14px", borderRadius: 12, border: "1px solid #cbd5e1", fontSize: 15, outline: "none", width: "100%", background: "white" };
+const textarea = { width: "100%", minHeight: 120, padding: 16, borderRadius: 12, border: "1px solid #cbd5e1", fontSize: 15, resize: "vertical", outline: "none", fontFamily: "inherit" };
+const loginPrompt = { background: "#f1f5f9", padding: 24, borderRadius: 16, textAlign: "center", color: "#475569", fontWeight: 500 };
 
 export default EventDetails;

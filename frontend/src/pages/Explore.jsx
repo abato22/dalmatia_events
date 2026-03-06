@@ -17,7 +17,7 @@ import "leaflet/dist/leaflet.css";
 const yellowPin = new L.Icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [15, 25],
+  iconSize: [25, 35],
   iconAnchor: [12, 31],
   popupAnchor: [1, -34],
   shadowSize: [21, 21]
@@ -290,7 +290,7 @@ function Explore() {
               style={{ height: "100%", width: "100%", backgroundColor: "#1e293b" }}
               zoom={8}
               minZoom={7.5}
-              maxZoom={14}
+              maxZoom={16}
               center={[43.0, 15.5]}
               maxBounds={DALMATIA_BOUNDS}
             >

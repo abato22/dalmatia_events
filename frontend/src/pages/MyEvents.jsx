@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import {
   MapContainer,
   TileLayer,
@@ -18,6 +19,11 @@ const DALMA_YELLOW = "#facc15";
 const TEXT_MAIN = "#0f172a";
 const TEXT_MUTED = "#64748b";
 
+const DALMATIA_BOUNDS = [
+  [42.0, 14.4],
+  [45.0, 18.65]
+];
+
 const yellowPin = new L.Icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png",
   shadowUrl: markerShadow,
@@ -29,6 +35,8 @@ const yellowPin = new L.Icon({
 
 function MyEvents() {
   const token = localStorage.getItem("token");
+  const navigate = useNavigate();
+
   const [events, setEvents] = useState({ past: [], current: [], future: [] });
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -63,7 +71,14 @@ function MyEvents() {
     }
   };
 
-  if (!token) return <div style={msgContainer}>Please log in to manage events.</div>;
+  if (!token) return (
+    <div style={messageContainer}>
+      <div style={lockIcon}>🔒</div>
+      <p style={messageText}>You must be logged in to view your events.</p>
+      <button style={primaryBtn2} onClick={() => navigate("/login")}>Go to Login</button>
+    </div>
+  );
+
   if (loading) return <div style={msgContainer}>Loading your dashboard...</div>;
 
   return (
@@ -263,7 +278,7 @@ function CreateEventModal({ onClose, editingEvent, onSaved }) {
 
           <div style={formSectionTitle}>Location Picker</div>
           <div style={mapWrapper}>
-            <MapContainer center={[43.5, 16.5]} zoom={8} style={{ height: "100%", width: "100%" }}>
+            <MapContainer center={[43.5, 16.5]} minZoom={7.5} maxZoom={16} maxBounds={DALMATIA_BOUNDS} style={{ height: "100%", width: "100%" }}>
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               <GeoJSON data={municipalitiesData} style={(f) => ({
                 color: selectedPlace && f.properties.NAME_2 === selectedPlace.name ? DALMA_BLUE : "#cbd5e1",
@@ -300,16 +315,71 @@ function LocationPicker({ selectedPlace, markerPosition, setMarkerPosition, setF
   useMapEvents({
     click(e) {
       if (!selectedPlace) return alert("Please select a municipality first.");
+      
       const feature = municipalitiesData.features.find(f => f.properties.NAME_2 === selectedPlace.name);
-      if (feature && L.geoJSON(feature).getBounds().contains(e.latlng)) {
-        setMarkerPosition(e.latlng);
-        setForm(prev => ({ ...prev, latitude: e.latlng.lat, longitude: e.latlng.lng }));
-      } else {
-        alert("Please click inside the boundaries of " + selectedPlace.name);
+      
+      if (feature) {
+        // Check against the exact geometric polygon instead of the bounding box
+        const isInside = isPointInGeoJSON(e.latlng, feature);
+        
+        if (isInside) {
+          setMarkerPosition(e.latlng);
+          setForm(prev => ({ ...prev, latitude: e.latlng.lat, longitude: e.latlng.lng }));
+        } else {
+          alert(`Please click inside the exact boundaries of ${selectedPlace.name}.`);
+        }
       }
     }
   });
+  
   return markerPosition ? <Marker position={markerPosition} icon={yellowPin} /> : null;
+}
+
+/* --- GEOJSON POINT-IN-POLYGON HELPERS --- */
+
+// 1. Identifies if the feature is a standard Polygon or a MultiPolygon (e.g., municipalities with islands)
+function isPointInGeoJSON(latlng, feature) {
+  const pt = [latlng.lng, latlng.lat]; // GeoJSON uses [longitude, latitude] arrays
+  const type = feature.geometry.type;
+  const coords = feature.geometry.coordinates;
+
+  if (type === 'Polygon') {
+    return isPointInPolygon(pt, coords);
+  } else if (type === 'MultiPolygon') {
+    for (let i = 0; i < coords.length; i++) {
+      if (isPointInPolygon(pt, coords[i])) return true;
+    }
+  }
+  return false;
+}
+
+// 2. Checks inside the outer boundary and ensures it doesn't fall inside a "hole" (like a lake)
+function isPointInPolygon(point, polygon) {
+  // polygon[0] is the outer geographic ring
+  let insideOuter = rayCast(point, polygon[0]);
+  if (!insideOuter) return false;
+
+  // Any subsequent arrays in the polygon data represent holes
+  for (let i = 1; i < polygon.length; i++) {
+    if (rayCast(point, polygon[i])) return false; 
+  }
+  return true;
+}
+
+// 3. The Ray-Casting algorithm: draws an imaginary line from the click to infinity and counts boundary intersections
+function rayCast(point, ring) {
+  const x = point[0], y = point[1];
+  let inside = false;
+  
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1];
+    const xj = ring[j][0], yj = ring[j][1];
+    
+    const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  
+  return inside;
 }
 
 /* STYLES */
@@ -360,5 +430,11 @@ const closeBtn = { background: "#f1f5f9", border: "none", width: "36px", height:
 
 const actionBtnEdit = { flex: 1, background: "#f1f5f9", border: "none", padding: "8px", borderRadius: "8px", fontWeight: 600, color: DALMA_BLUE, cursor: "pointer" };
 const actionBtnDelete = { flex: 1, background: "#fff1f2", border: "none", padding: "8px", borderRadius: "8px", fontWeight: 600, color: "#e11d48", cursor: "pointer" };
+
+const messageContainer = { textAlign: "center", padding: "100px 20px" };
+const lockIcon = { fontSize: 40, marginBottom: 16 };
+const messageText = { fontSize: 18, color: "#64748b", marginBottom: 24 };
+const primaryBtn2 = { background: DALMA_BLUE, color: "white", border: "none", padding: "12px 24px", borderRadius: 10, fontWeight: 600, cursor: "pointer" };
+
 
 export default MyEvents;
