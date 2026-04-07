@@ -4,9 +4,7 @@ require("dotenv").config();
 
 const app = express();
 
-app.use(cors({
-  origin: "https://dalmatia-events.vercel.app/"
-  }));
+app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
